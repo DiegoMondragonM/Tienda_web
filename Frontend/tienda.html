@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Tienda | Cliente</title>
+  <style>
+    :root{
+      --bg:#0b1220; --card:rgba(255,255,255,.04); --line:rgba(255,255,255,.10);
+      --text:#e8f0ff; --muted:#93a4bd; --shadow:0 18px 55px rgba(0,0,0,.35);
+      --r:20px; --accent:#4aa3ff; --ok:#28d17c; --danger:#ff4a6a;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:var(--text);
+      background:
+        radial-gradient(1200px 700px at 18% 10%, rgba(74,163,255,.22), transparent 60%),
+        radial-gradient(1000px 650px at 82% 20%, rgba(40,209,124,.16), transparent 60%),
+        var(--bg);
+    }
+    .wrap{max-width:1200px;margin:34px auto;padding:0 16px;}
+    .top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:44px;height:44px;border-radius:16px;background:linear-gradient(135deg, rgba(74,163,255,.95), rgba(40,209,124,.9)); box-shadow:var(--shadow)}
+    h1{margin:0;font-size:22px}
+    .sub{margin-top:3px;color:var(--muted);font-size:13px}
+    .pill{border:1px solid var(--line);background:rgba(255,255,255,.03);border-radius:999px;padding:9px 12px;display:flex;gap:10px;align-items:center}
+    .pill input{background:transparent;border:0;outline:0;color:var(--text);min-width:240px}
+    .grid{display:grid;grid-template-columns: 1.35fr .65fr;gap:16px}
+    @media(max-width:980px){.grid{grid-template-columns:1fr}.pill input{min-width:160px}}
+    .card{border:1px solid var(--line);background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+    .h{padding:14px 16px;border-bottom:1px solid var(--line);background:linear-gradient(180deg, rgba(255,255,255,.06), transparent);display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .h b{font-size:14px}
+    .b{padding:16px}
+    .products{display:grid;grid-template-columns: repeat(3, 1fr);gap:12px}
+    @media(max-width:1100px){.products{grid-template-columns: repeat(2, 1fr)}}
+    @media(max-width:640px){.products{grid-template-columns: 1fr}}
+    .p{
+      border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.03);
+      padding:14px; position:relative; overflow:hidden;
+      transition: transform .15s ease, border-color .15s ease;
+    }
+    .p:hover{transform: translateY(-2px); border-color: rgba(255,255,255,.18)}
+    .p .name{font-weight:900}
+    .p .desc{color:var(--muted);font-size:12px;line-height:1.35;margin:6px 0 10px;min-height:32px}
+    .row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+    .price{font-weight:900}
+    .stock{color:var(--muted);font-size:12px}
+    .qty{display:flex;align-items:center;gap:8px}
+    .qty input{width:70px;padding:8px 10px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.02);color:var(--text);outline:0}
+    button{
+      cursor:pointer;border:1px solid var(--line);border-radius:12px;
+      padding:9px 12px;background:rgba(74,163,255,.16);color:var(--text);font-weight:800;
+    }
+    button.secondary{background:rgba(255,255,255,.04);color:var(--muted)}
+    button.danger{background:rgba(255,74,106,.14)}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    .cartItem{border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.03);padding:12px;margin-bottom:10px}
+    .cartItem .t{display:flex;justify-content:space-between;gap:10px}
+    .muted{color:var(--muted);font-size:12px}
+    .tot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+    .big{font-weight:1000;font-size:18px}
+    .msg{margin-top:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--muted);font-size:13px;display:none}
+    .msg.ok{border-color:rgba(40,209,124,.35);color:rgba(40,209,124,.95)}
+    .msg.err{border-color:rgba(255,74,106,.35);color:rgba(255,74,106,.95)}
+    code{color:rgba(232,240,255,.9)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>Tienda (Cliente)</h1>
+          <div class="sub">Elige productos, agrégalos al carrito y al final confirmas tu compra.</div>
+        </div>
+      </div>
+      <div class="pill">
+        🔎 <input id="q" type="search" placeholder="Buscar producto…" />
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- Productos -->
+      <div class="card">
+        <div class="h">
+          <b>Productos disponibles</b>
+          <button class="secondary" id="btnReload">Recargar</button>
+        </div>
+        <div class="b">
+          <div id="plist" class="products">
+            <div class="p">Cargando…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Carrito -->
+      <div class="card">
+        <div class="h">
+          <b>Tu carrito</b>
+          <button class="danger" id="btnClear">Vaciar</button>
+        </div>
+        <div class="b">
+          <div id="cart"></div>
+
+          <div class="tot">
+            <div>
+              <div class="muted">Total</div>
+              <div class="big" id="total">$0.00</div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+              <button class="secondary" id="btnSave">Guardar carrito</button>
+              <button id="btnCheckout">Confirmar compra</button>
+            </div>
+          </div>
+
+          <div id="msg" class="msg"></div>
+          <div class="muted" style="margin-top:10px">
+            Cuando usted confirma su compra, esta se empezara a surtir de inmediato y usted puede pasar a pagar a caja y recoger su mercancia
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const API = "/api"; // si tu API está en otra ruta, cámbialo aquí
+  const LS_KEY = "carrito_tienda_v1";
+
+  const $ = (s) => document.querySelector(s);
+  const plist = $("#plist");
+  const cartEl = $("#cart");
+  const totalEl = $("#total");
+  const msg = $("#msg");
+  const q = $("#q");
+
+  let productos = [];    // viene de la API
+  let carrito = [];      // [{id, nombre, precio, qty}]
+  let CLIENTE_ID = null;
+
+async function cargarSesionCliente(){
+  const r = await fetch("/api/client_me.php", { cache:"no-store" });
+  const data = await r.json();
+  if(!data.ok){
+    // No hay sesión -> al login
+    location.href = "login_cliente.html";
+    return;
+  }
+  CLIENTE_ID = data.cliente.id;
+  // (Opcional) mostrar nombre en pantalla
+  console.log("Cliente:", data.cliente);
+}
+
+cargarSesionCliente();
+
+  function esc(s){
+    return String(s ?? "").replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[m]));
+  }
+  function show(text, type=""){
+    msg.style.display = "block";
+    msg.className = "msg " + type;
+    msg.textContent = text;
+  }
+  function hide(){ msg.style.display = "none"; }
+
+  function money(n){
+    return "$" + Number(n||0).toFixed(2);
+  }
+
+  function saveCart(){
+    localStorage.setItem(LS_KEY, JSON.stringify(carrito));
+    show("Carrito guardado ✅", "ok");
+  }
+  function loadCart(){
+    try{
+      const raw = localStorage.getItem(LS_KEY);
+      carrito = raw ? JSON.parse(raw) : [];
+    }catch(_){
+      carrito = [];
+    }
+  }
+
+  function calcTotal(){
+    return carrito.reduce((sum, it) => sum + (Number(it.precio) * Number(it.qty)), 0);
+  }
+
+  function renderCart(){
+    if(carrito.length === 0){
+      cartEl.innerHTML = `<div class="muted">Tu carrito está vacío.</div>`;
+      totalEl.textContent = money(0);
+      return;
+    }
+
+    cartEl.innerHTML = carrito.map(it => `
+      <div class="cartItem">
+        <div class="t">
+          <div>
+            <div style="font-weight:900">${esc(it.nombre)}</div>
+            <div class="muted">${money(it.precio)} c/u</div>
+          </div>
+          <button class="secondary" data-dec="${it.id}">-</button>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <div class="muted">Cantidad: <b>${Number(it.qty)}</b></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="secondary" data-sub="${it.id}">Quitar</button>
+            <button class="secondary" data-inc="${it.id}">+</button>
+          </div>
+        </div>
+      </div>
+    `).join("");
+
+    totalEl.textContent = money(calcTotal());
+  }
+
+  function renderProducts(){
+    const term = q.value.trim().toLowerCase();
+    const list = productos.filter(p => {
+      const hay = `${p.nombre||""} ${p.descripcion||""}`.toLowerCase();
+      return !term || hay.includes(term);
+    });
+
+    if(list.length === 0){
+      plist.innerHTML = `<div class="p">Sin resultados.</div>`;
+      return;
+    }
+
+    plist.innerHTML = list.map(p => `
+      <div class="p">
+        <div class="name">${esc(p.nombre)}</div>
+        <div class="desc">${esc(p.descripcion || "")}</div>
+        <div class="row">
+          <div>
+            <div class="price">${money(p.precio)}</div>
+            <div class="stock">Stock: ${Number(p.existencias ?? 0)}</div>
+          </div>
+          <div class="qty">
+            <input type="number" min="1" value="1" data-qty="${p.id}">
+            <button data-add="${p.id}" ${Number(p.existencias ?? 0) <= 0 ? "disabled" : ""}>
+              Agregar
+            </button>
+          </div>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function addToCart(id, qty){
+    const p = productos.find(x => Number(x.id) === Number(id));
+    if(!p) return;
+
+    qty = Math.max(1, Number(qty||1));
+    const stock = Number(p.existencias ?? 0);
+    if(stock <= 0){ show("No hay existencias de ese producto.", "err"); return; }
+
+    const current = carrito.find(x => Number(x.id) === Number(id));
+    const currentQty = current ? Number(current.qty) : 0;
+
+    if(currentQty + qty > stock){
+      show(`No puedes agregar ${qty}. Stock disponible: ${stock}.`, "err");
+      return;
+    }
+
+    if(current){
+      current.qty += qty;
+    }else{
+      carrito.push({ id:Number(p.id), nombre:String(p.nombre), precio:Number(p.precio), qty:qty });
+    }
+    hide();
+    renderCart();
+  }
+
+  function inc(id){
+    const it = carrito.find(x => Number(x.id) === Number(id));
+    if(!it) return;
+    const p = productos.find(x => Number(x.id) === Number(id));
+    const stock = Number(p?.existencias ?? 0);
+    if(it.qty + 1 > stock){ show(`Stock máximo: ${stock}`, "err"); return; }
+    it.qty += 1;
+    hide();
+    renderCart();
+  }
+
+  function dec(id){
+    const it = carrito.find(x => Number(x.id) === Number(id));
+    if(!it) return;
+    it.qty -= 1;
+    if(it.qty <= 0) carrito = carrito.filter(x => Number(x.id) !== Number(id));
+    hide();
+    renderCart();
+  }
+
+  function removeItem(id){
+    carrito = carrito.filter(x => Number(x.id) !== Number(id));
+    hide();
+    renderCart();
+  }
+
+  async function loadProductos(){
+    hide();
+    plist.innerHTML = `<div class="p">Cargando…</div>`;
+    try{
+      const r = await fetch(`${API}/productos_list.php`, { cache:"no-store" });
+      const raw = await r.text();
+      let data = JSON.parse(raw);
+
+      // soporta formatos:
+      // {ok:true,data:[...]} OR {rows:[...]} OR [...]
+      if (Array.isArray(data)) productos = data;
+      else productos = data.data || data.rows || data.result || [];
+
+      // normaliza campos por si vienen con otros nombres
+      productos = productos.map(p => ({
+        id: Number(p.id ?? p.idProducto ?? p.productoID),
+        nombre: p.nombre,
+        descripcion: p.descripcion ?? "",
+        precio: Number(p.precio ?? 0),
+        existencias: Number(p.existencias ?? p.stock ?? 0)
+      })).filter(p => p.id);
+
+      renderProducts();
+    }catch(e){
+      plist.innerHTML = `<div class="p">Error cargando productos.</div>`;
+      show("No pude leer /api/productos_list.php (revisa que regrese JSON).", "err");
+    }
+  }
+
+  // Eventos
+  q.addEventListener("input", renderProducts);
+
+  $("#btnReload").addEventListener("click", loadProductos);
+
+  plist.addEventListener("click", (ev) => {
+    const btn = ev.target.closest("button[data-add]");
+    if(!btn) return;
+    const id = btn.getAttribute("data-add");
+    const inp = plist.querySelector(`input[data-qty="${CSS.escape(id)}"]`);
+    const qty = inp ? inp.value : 1;
+    addToCart(id, qty);
+  });
+
+  cartEl.addEventListener("click", (ev) => {
+    const bInc = ev.target.closest("button[data-inc]");
+    const bDec = ev.target.closest("button[data-dec]");
+    const bSub = ev.target.closest("button[data-sub]");
+    if(bInc) inc(bInc.getAttribute("data-inc"));
+    if(bDec) dec(bDec.getAttribute("data-dec"));
+    if(bSub) removeItem(bSub.getAttribute("data-sub"));
+  });
+
+  $("#btnClear").addEventListener("click", () => {
+    if(!confirm("¿Vaciar carrito?")) return;
+    carrito = [];
+    localStorage.removeItem(LS_KEY);
+    hide();
+    renderCart();
+  });
+
+  $("#btnSave").addEventListener("click", saveCart);
+
+$("#btnCheckout").addEventListener("click", async () => {
+  if(carrito.length === 0){
+    show("Tu carrito está vacío.", "err");
+    return;
+  }
+
+  // ⚠️ por ahora usamos clienteID = 1 (luego será login cliente)
+  const payload = {
+    items: carrito.map(it => ({
+      productoID: it.id,
+      cantidad: it.qty,
+      precio: it.precio
+    }))
+  };
+
+  try{
+    const r = await fetch("/api/ventas_create.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await r.json();
+    if(!data.ok) throw new Error(data.error || "No se pudo crear la venta");
+
+    alert(
+      `TICKET GENERADO\n\n` +
+      `Folio: ${data.ventaID}\n` +
+      `Total: $${data.total.toFixed(2)}\n\n` +
+      `Pasa a caja a pagar 😄`
+    );
+
+    carrito = [];
+    localStorage.removeItem(LS_KEY);
+    renderCart();
+    show("Venta registrada correctamente ✅", "ok");
+
+  } catch(e){
+    show("Error: " + e.message, "err");
+  }
+});
+
+
+  // init
+  loadCart();
+  renderCart();
+  loadProductos();
+</script>
+</body>
+</html>

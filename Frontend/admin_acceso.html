@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Admin | Login</title>
+  <style>
+    :root{--bg:#0b1220;--card:rgba(255,255,255,.04);--line:rgba(255,255,255,.10);--text:#e8f0ff;--muted:#93a4bd;--shadow:0 18px 55px rgba(0,0,0,.35);--r:20px;--accent:#4aa3ff;--danger:#ff4a6a;--ok:#28d17c;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);
+      background: radial-gradient(1200px 700px at 18% 10%, rgba(74,163,255,.22), transparent 60%),
+                 radial-gradient(1000px 650px at 82% 15%, rgba(40,209,124,.16), transparent 60%),
+                 var(--bg);}
+    .wrap{max-width:980px;margin:50px auto;padding:0 16px;}
+    .card{max-width:420px;margin:0 auto;border:1px solid var(--line);background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+    .h{padding:16px 18px;border-bottom:1px solid var(--line);background:linear-gradient(180deg, rgba(255,255,255,.06), transparent)}
+    .h b{font-size:15px}
+    .b{padding:18px}
+    label{display:block;font-size:12px;color:var(--muted);margin:10px 0 6px}
+    input{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.02);color:var(--text);outline:0}
+    button{margin-top:14px;width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(74,163,255,.18);color:var(--text);font-weight:800;cursor:pointer}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    .msg{margin-top:12px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--muted);font-size:13px;display:none}
+    .msg.err{border-color:rgba(255,74,106,.35);color:rgba(255,74,106,.95)}
+    .msg.ok{border-color:rgba(40,209,124,.35);color:rgba(40,209,124,.95)}
+    .small{margin-top:12px;color:var(--muted);font-size:12px;text-align:center}
+    a{color:var(--accent);text-decoration:none}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="h"><b>Acceso Administrador</b></div>
+      <div class="b">
+        <form id="f">
+          <label>Usuario</label>
+          <input name="usuario" required placeholder="admin"/>
+
+          <label>Contraseña</label>
+          <input name="password" type="password" required placeholder="••••••••"/>
+
+          <button id="btn" type="submit">Entrar</button>
+          <div id="msg" class="msg"></div>
+
+          <div class="small">
+            ← <a href="index.html">Volver al inicio</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const API = "/api";
+  const f = document.querySelector("#f");
+  const btn = document.querySelector("#btn");
+  const msg = document.querySelector("#msg");
+
+  function show(text, type=""){
+    msg.style.display = "block";
+    msg.className = "msg " + type;
+    msg.textContent = text;
+  }
+
+  f.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    msg.style.display = "none";
+    btn.disabled = true;
+
+    try{
+      const fd = new FormData(f);
+      const r = await fetch(`${API}/admin_login.php`, { method:"POST", body: fd });
+      const data = await r.json();
+
+      if(!data.ok) throw new Error(data.error || "No se pudo iniciar sesión");
+
+      show("Bienvenido ✅", "ok");
+      setTimeout(() => location.href = "admin_panel.php", 500);
+    }catch(err){
+      show("Error: " + err.message, "err");
+    }finally{
+      btn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
